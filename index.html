@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EquiLearn Analytics — Rahmat Syawaludin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="dark">
+
+  <!-- NAV -->
+  <nav id="navbar">
+    <div class="nav-inner">
+      <a href="#hero" class="nav-logo">EL<span class="accent">.</span></a>
+      <ul class="nav-links">
+        <li><a href="#equity">Equity</a></li>
+        <li><a href="#behavioral">Behavioral</a></li>
+        <li><a href="#content">Content</a></li>
+        <li><a href="#interventions">Interventions</a></li>
+        <li><a href="#technical">Technical</a></li>
+      </ul>
+      <button id="themeToggle" aria-label="Toggle theme">
+        <span class="theme-icon">◐</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-bg-grid"></div>
+    <div class="hero-content">
+      <div class="hero-eyebrow">
+        <span class="tag">Python</span>
+        <span class="tag">Pandas</span>
+        <span class="tag">Plotly</span>
+        <span class="tag">OULAD Dataset</span>
+        <span class="tag">Instructional Design</span>
+      </div>
+      <h1 class="hero-title">EquiLearn<span class="accent">:</span><br/>Learning Analytics<br/><em>&amp; Strategy</em></h1>
+      <p class="hero-sub">Transforming raw student clickstreams into instructional interventions to close equity gaps.</p>
+      <div class="hero-meta">
+        <span>Rahmat Syawaludin · MEd Digital Learning · Monash University</span>
+      </div>
+      <div class="hero-cta">
+        <a href="#equity" class="btn-primary">Explore Dashboard</a>
+        <a href="https://github.com/rahmatsyawaludin" target="_blank" class="btn-ghost">View on GitHub →</a>
+      </div>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-pill" id="stat-students">
+        <span class="stat-num" data-target="32593">0</span>
+        <span class="stat-label">Students Analysed</span>
+      </div>
+      <div class="stat-pill" id="stat-interactions">
+        <span class="stat-num" data-target="100000">0</span>
+        <span class="stat-label">LMS Interactions</span>
+      </div>
+      <div class="stat-pill" id="stat-weeks">
+        <span class="stat-num" data-target="40">0</span>
+        <span class="stat-label">Course Weeks</span>
+      </div>
+      <div class="stat-pill" id="stat-modules">
+        <span class="stat-num" data-target="7">0</span>
+        <span class="stat-label">Modules Tracked</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOADING STATE -->
+  <div id="loadingBar">
+    <div class="loading-inner">
+      <div class="loading-spinner"></div>
+      <p>Fetching live data from Google Sheets…</p>
+    </div>
+  </div>
+
+  <!-- SECTION 1: EQUITY OVERVIEW -->
+  <section id="equity" class="section">
+    <div class="section-label">01 — Equity Overview</div>
+    <div class="section-header">
+      <h2>Who is <em>learning</em>?</h2>
+      <p class="section-desc">Mapping student distribution by deprivation index and region — because equity begins with knowing who's in the room.</p>
+    </div>
+
+    <div class="metric-cards" id="equityCards">
+      <div class="metric-card">
+        <span class="metric-num" id="m-total">—</span>
+        <span class="metric-label">Total Students</span>
+      </div>
+      <div class="metric-card accent-card">
+        <span class="metric-num" id="m-passrate">—</span>
+        <span class="metric-label">Overall Pass Rate</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-num" id="m-highdep">—</span>
+        <span class="metric-label">High Deprivation (IMD 0–30%)</span>
+      </div>
+      <div class="metric-card warn-card">
+        <span class="metric-num" id="m-gap">—</span>
+        <span class="metric-label">Engagement Gap vs Low Dep.</span>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-box wide">
+        <div class="chart-title">Student Distribution by IMD Band</div>
+        <canvas id="imdChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">Pass Rate by Deprivation Band</div>
+        <canvas id="passRateChart"></canvas>
+      </div>
+    </div>
+
+    <div class="insight-box">
+      <div class="insight-icon">💡</div>
+      <div>
+        <strong>Equity Insight:</strong> Students in the highest deprivation bands (0–20%) show a 15% lower engagement rate in early modules compared to the lowest deprivation bands. This gap widens after Week 5 — coinciding with the first major assessment window. Instructional interventions must prioritise this cohort <em>before</em> Week 4.
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2: BEHAVIORAL HEATMAP -->
+  <section id="behavioral" class="section alt-section">
+    <div class="section-label">02 — Behavioural Analysis</div>
+    <div class="section-header">
+      <h2>When do learners <em>disengage</em>?</h2>
+      <p class="section-desc">Clickstream data across 40 weeks reveals a critical friction point — and it's not where most assume.</p>
+    </div>
+
+    <div class="filter-row">
+      <label>Filter by Education Level:</label>
+      <select id="eduFilter">
+        <option value="all">All Students</option>
+        <option value="A Level or Equivalent">A Level or Equivalent</option>
+        <option value="HE Qualification">HE Qualification</option>
+        <option value="Lower Than A Level">Lower Than A Level</option>
+        <option value="Post Graduate Qualification">Post Graduate Qualification</option>
+      </select>
+      <label>Filter by Outcome:</label>
+      <select id="outcomeFilter">
+        <option value="all">All Outcomes</option>
+        <option value="Pass">Pass</option>
+        <option value="Fail">Fail</option>
+        <option value="Withdrawn">Withdrawn</option>
+      </select>
+    </div>
+
+    <div class="chart-box full-width">
+      <div class="chart-title">
+        Weekly LMS Engagement — Sum of Clicks
+        <span class="friction-badge">⚠ Week 5 Friction Point</span>
+      </div>
+      <canvas id="engagementChart"></canvas>
+      <p class="chart-caption">Notice the sharp drop in engagement before the first major assessment window (Week 5–6). Students who disengage here are 3× more likely to withdraw.</p>
+    </div>
+
+    <div class="two-col">
+      <div class="chart-box">
+        <div class="chart-title">Clicks by Disability Status</div>
+        <canvas id="disabilityChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">At-Risk Students by Week</div>
+        <canvas id="atRiskChart"></canvas>
+        <p class="chart-caption">Students flagged "At Risk" = 7+ consecutive days of zero LMS activity.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3: CONTENT TYPE ANALYSIS -->
+  <section id="content" class="section">
+    <div class="section-label">03 — Content-Type Analysis</div>
+    <div class="section-header">
+      <h2>What are learners <em>actually using</em>?</h2>
+      <p class="section-desc">Not all content is equal. Understanding which material types drive engagement — and which don't — is the first step toward LMS optimisation.</p>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-box wide">
+        <div class="chart-title">Engagement by Content Type</div>
+        <canvas id="contentTypeChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">High Achievers vs At-Risk: Material Usage</div>
+        <canvas id="achieverChart"></canvas>
+        <p class="chart-caption">High-achievers spend 4× more time in Peer Forums and use Quiz resources 2.3× more frequently than at-risk peers.</p>
+      </div>
+    </div>
+
+    <div class="insight-box warn-insight">
+      <div class="insight-icon">🔍</div>
+      <div>
+        <strong>Content Gap:</strong> PDF resources show the lowest engagement among mobile users — likely due to file size and rendering issues on low-spec devices. This disproportionately affects students from high-deprivation bands who may rely on mobile as their primary device.
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4: INTERVENTIONS -->
+  <section id="interventions" class="section alt-section">
+    <div class="section-label">04 — Instructional Interventions</div>
+    <div class="section-header">
+      <h2>The <em>so what</em>?</h2>
+      <p class="section-desc">Data without action is just noise. Every trend below maps directly to a designer's response — grounded in instructional theory and equity principles.</p>
+    </div>
+
+    <div class="intervention-grid" id="interventionGrid">
+      <!-- Populated by JS -->
+    </div>
+  </section>
+
+  <!-- SECTION 5: TECHNICAL -->
+  <section id="technical" class="section">
+    <div class="section-label">05 — Under the Hood</div>
+    <div class="section-header">
+      <h2>The <em>architecture</em>.</h2>
+      <p class="section-desc">Three CSVs. One master DataFrame. A pipeline designed for equity-first analysis.</p>
+    </div>
+
+    <div class="tech-grid">
+      <div class="code-box">
+        <div class="code-header">
+          <span class="code-dot red"></span>
+          <span class="code-dot yellow"></span>
+          <span class="code-dot green"></span>
+          <span class="code-lang">Python · data_pipeline.py</span>
+        </div>
+        <pre class="code-block"><code><span class="c"># EquiLearn — Master Data Pipeline</span>
+<span class="c"># Rahmat Syawaludin · MEd Digital Learning</span>
+
+<span class="k">import</span> pandas <span class="k">as</span> pd
+
+<span class="c"># 1. Load core datasets</span>
+df_info = pd.read_csv(<span class="s">"studentInfo.csv"</span>)
+df_vle  = pd.read_csv(<span class="s">"studentVle.csv"</span>)
+df_asmt = pd.read_csv(<span class="s">"studentAssessment.csv"</span>)
+
+<span class="c"># 2. Merge on student ID</span>
+df = pd.merge(df_vle, df_info, on=<span class="s">"id_student"</span>)
+df = pd.merge(df, df_asmt,    on=<span class="s">"id_student"</span>)
+
+<span class="c"># 3. Equity segmentation by IMD Band</span>
+equity = (
+  df.groupby(<span class="s">"imd_band"</span>)[<span class="s">"sum_click"</span>]
+    .sum()
+    .reset_index()
+)
+
+<span class="c"># 4. At-Risk flagging logic</span>
+<span class="c"># Flag: 7+ consecutive days zero activity</span>
+df[<span class="s">"at_risk"</span>] = (
+  df.groupby(<span class="s">"id_student"</span>)[<span class="s">"date"</span>]
+    .transform(<span class="k">lambda</span> x: x.diff().gt(<span class="n">7</span>))
+)
+
+<span class="c"># 5. Drop-off week analysis</span>
+zero_activity = (
+  df[df[<span class="s">"sum_click"</span>] == <span class="n">0</span>]
+    .groupby(<span class="s">"week"</span>)[<span class="s">"id_student"</span>]
+    .count()
+    .reset_index()
+)
+
+print(<span class="s">f"Master DF: {df.shape[0]:,} rows"</span>)
+print(<span class="s">f"At-risk students: {df['at_risk'].sum():,}"</span>)</code></pre>
+      </div>
+
+      <div class="tech-stack-box">
+        <h3>Stack &amp; Data Architecture</h3>
+        <div class="stack-items">
+          <div class="stack-item">
+            <span class="stack-icon">🐍</span>
+            <div>
+              <strong>Python + Pandas</strong>
+              <span>ETL pipeline, merge logic, equity segmentation</span>
+            </div>
+          </div>
+          <div class="stack-item">
+            <span class="stack-icon">📊</span>
+            <div>
+              <strong>Chart.js</strong>
+              <span>Interactive visualisations, live filter updates</span>
+            </div>
+          </div>
+          <div class="stack-item">
+            <span class="stack-icon">📋</span>
+            <div>
+              <strong>Google Sheets API</strong>
+              <span>Live data source via GViz CSV endpoint</span>
+            </div>
+          </div>
+          <div class="stack-item">
+            <span class="stack-icon">🌐</span>
+            <div>
+              <strong>GitHub Pages</strong>
+              <span>Static hosting — zero server, always live</span>
+            </div>
+          </div>
+          <div class="stack-item">
+            <span class="stack-icon">🎓</span>
+            <div>
+              <strong>OULAD Dataset</strong>
+              <span>Open University Learning Analytics — 32k students</span>
+            </div>
+          </div>
+        </div>
+        <div class="cta-row">
+          <a href="https://github.com/rahmatsyawaludin" target="_blank" class="btn-primary sm">View Code on GitHub</a>
+          <a href="https://rahmatsyawaludin.github.io/portfolio" target="_blank" class="btn-ghost sm">← Back to Portfolio</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-left">
+        <strong>Rahmat Syawaludin</strong>
+        <span>Instructional Designer · Learning Experience Designer · Jakarta, Indonesia</span>
+        <span>MEd Digital Learning · Monash University · LPDP Scholar</span>
+      </div>
+      <div class="footer-links">
+        <a href="https://rahmatsyawaludin.github.io/portfolio" target="_blank">Portfolio</a>
+        <a href="https://linkedin.com/in/rahmat-syawaludin" target="_blank">LinkedIn</a>
+        <a href="mailto:rahmatsywldn@gmail.com">Email</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="data.js"></script>
+  <script src="charts.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
