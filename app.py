@@ -237,10 +237,10 @@ def load_data():
         })
         if len(df) < 2:
             raise ValueError("Empty sheet")
-        source = "🟢 Live: Google Sheets"
+        source = "🟢 Mock data, live from Google Sheets"
     except Exception:
         df = pd.read_csv(StringIO(MASTER_CSV))
-        source = "🟡 Sample data (fallback)"
+        source = "🟡 Mock data (built-in copy)"
 
     # Clean types
     for col in ["total_clicks", "avg_time_per_session", "assignments_submitted", "final_score"]:
@@ -271,38 +271,75 @@ def tidy(fig):
     )
     return fig
 
-INTERVENTIONS = [
-    (
-        "Students from high-deprivation areas (IMD 0-10%) use Mobile (Low-Bandwidth) devices significantly more, yet LMS content is not optimised for low-bandwidth environments.",
-        "Audit all course materials for mobile responsiveness. Convert PDFs to lightweight HTML pages. Compress video assets. Add a 'Low-Bandwidth Mode' toggle in LMS settings.",
-        ["Equity-First Design", "Offline-First", "UDL"], "high"
-    ),
-    (
-        "Withdrawn students average only 1 assignment submission, compared to 3.5 for passing students. Early assignment non-submission is the clearest at-risk signal in this dataset.",
-        "Implement an automated flag: if a student has not submitted Assignment 1 by Week 3, trigger personal outreach by SMS, WhatsApp or a tutor call, depending on device type.",
-        ["ADDIE", "SAM Iteration", "Formative Design"], "high"
-    ),
-    (
-        "Students from Maluku and West Papua show lower average scores and higher withdrawal rates relative to Jakarta and Sumatra cohorts.",
-        "Design a region-aware onboarding module. Acknowledge bandwidth constraints upfront, provide offline-first alternatives, and include culturally grounded context examples from Eastern Indonesia.",
-        ["Needs Analysis", "Culturally Responsive Design", "Backward Design"], "high"
-    ),
-    (
-        "Secondary-education students submit fewer assignments and have lower average scores, yet enrol at similar rates to Bachelor/Master-level peers.",
-        "Build a differentiated pre-module literacy scaffold for students with secondary-level prior education. Use inquiry-based activities before formal assessment to build confidence.",
-        ["Differentiated Instruction", "Vygotsky ZPD", "Backward Design"], "medium"
-    ),
-    (
-        "High-passing students average 42 total clicks; withdrawn students average only 22: a 2× engagement gap that appears within the first two weeks.",
-        "Set a Week 2 engagement threshold: fewer than 15 clicks by end of Week 2 triggers an automated check-in prompt. Early detection prevents late-stage withdrawal.",
-        ["Cognitive Load Theory", "SAM", "Formative Design"], "medium"
-    ),
-    (
-        "Desktop users outperform mobile users by an average of 12 score points, indicating that device access is a structural equity variable, not a learner variable.",
-        "Partner with regional institutions to provide device lending programmes. Design 'Mobile-First' content variants for all core modules, as the default rather than an extra.",
-        ["Universal Design for Learning", "Equity-First Design", "Accessibility"], "medium"
-    ),
-]
+def _pct(x):
+    return round(float(x) * 100)
+
+
+def build_interventions(data):
+    """Every finding is calculated from the dataset, so the text stays true
+    if the Google Sheet changes. Recommendations are the designer's response."""
+    d = data.copy()
+    mob = d["device"].str.contains("Mobile", na=False)
+    high_dep = d["imd_band"].str.contains("0-10%", na=False)
+    sub = d.groupby("status")["assignments_submitted"].mean()
+    clicks = d.groupby("status")["total_clicks"].mean()
+    at_risk = d["assignments_submitted"] <= 1
+    wd = d["status"] == "Withdrawn"
+    region_score = d.groupby("region")["final_score"].mean().sort_values()
+    edu = d.groupby("prior_education")[["assignments_submitted", "final_score"]].mean()
+    top_edu = edu["final_score"].idxmax()
+    big_screen = d["device"].isin(["Desktop", "Laptop"])
+    gap = d.loc[big_screen, "final_score"].mean() - d.loc[mob, "final_score"].mean()
+
+    return [
+        (
+            f"{_pct(mob[high_dep].mean())}% of students in the highest-deprivation band (IMD 0-10%) "
+            f"learn on Mobile (Low-Bandwidth) devices, compared with {_pct(mob[~high_dep].mean())}% "
+            "of everyone else, yet LMS content is rarely optimised for low-bandwidth use.",
+            "Audit all course materials for mobile responsiveness. Convert PDFs to lightweight HTML pages. "
+            "Compress video assets. Add a 'Low-Bandwidth Mode' toggle in LMS settings.",
+            ["Equity-First Design", "Offline-First", "UDL"], "high"
+        ),
+        (
+            f"Withdrawn students submitted {sub.get('Withdrawn', 0):.1f} assignments on average, "
+            f"compared with {sub.get('Pass', 0):.1f} for passing students. Of the {int(at_risk.sum())} "
+            f"students with one submission or fewer, {_pct(wd[at_risk].mean())}% withdrew, versus "
+            f"{_pct(wd[~at_risk].mean())}% of the rest.",
+            "Implement an automated flag: if a student has not submitted Assignment 1 by Week 3, trigger "
+            "personal outreach by SMS, WhatsApp or a tutor call, depending on device type.",
+            ["ADDIE", "SAM Iteration", "Formative Design"], "high"
+        ),
+        (
+            f"{region_score.index[0]} has the lowest average final score ({region_score.iloc[0]:.1f}), "
+            f"while {region_score.index[-1]} has the highest ({region_score.iloc[-1]:.1f}).",
+            "Design a region-aware onboarding module. Acknowledge bandwidth constraints upfront, provide "
+            "offline-first alternatives, and include culturally grounded context examples from Eastern Indonesia.",
+            ["Needs Analysis", "Culturally Responsive Design", "Backward Design"], "high"
+        ),
+        (
+            f"Prior qualification is not a barrier in this cohort: {top_edu}-level students have the "
+            f"highest average score ({edu.loc[top_edu, 'final_score']:.1f}) and submit "
+            f"{edu.loc[top_edu, 'assignments_submitted']:.1f} assignments on average.",
+            "Avoid gatekeeping or streaming learners by prior credentials. Offer optional scaffolds to "
+            "everyone and trigger extra support from in-course signals (like missed submissions) instead.",
+            ["Differentiated Instruction", "Vygotsky ZPD", "Backward Design"], "medium"
+        ),
+        (
+            f"Clicks alone are a weak signal: passing students average {clicks.get('Pass', 0):.1f} clicks "
+            f"and withdrawn students {clicks.get('Withdrawn', 0):.1f}. Submissions separate outcomes far more clearly.",
+            "Build early-warning rules on submissions and assessment activity rather than raw click counts. "
+            "Use clicks only as a secondary signal alongside submission data.",
+            ["Learning Analytics", "SAM", "Formative Design"], "medium"
+        ),
+        (
+            f"Desktop and Laptop users score {gap:.1f} points higher on average than Mobile "
+            "(Low-Bandwidth) users, suggesting device access is a structural equity variable, "
+            "not a learner variable.",
+            "Partner with regional institutions to provide device lending programmes. Design 'Mobile-First' "
+            "content variants for all core modules, as the default rather than an extra.",
+            ["Universal Design for Learning", "Equity-First Design", "Accessibility"], "medium"
+        ),
+    ]
 
 
 # ── LOAD ─────────────────────────────────────────────────────────────────────
@@ -400,7 +437,7 @@ if page == "01 · Equity Overview":
                 color:{ACCENT};font-weight:700;margin-bottom:0.4rem">01 · Equity Overview</div>
     <h2 style="margin:0 0 0.4rem">Who is <em style="color:{TEAL_DK};font-style:normal">learning</em>?</h2>
     <p style="color:{MUTED};max-width:580px;margin:0 0 1.75rem">
-      Mapping 50 students across Indonesia by deprivation index, region, and device,
+      Mapping a mock dataset of {len(df)} students across Indonesia by deprivation index, region, and device,
       because equity begins with knowing who's in the room.
     </p>
     """, unsafe_allow_html=True)
@@ -480,12 +517,15 @@ if page == "01 · Equity Overview":
     low_dep_pass = round(
         (dff[dff["imd_band"].str.contains("90-100%", na=False)]["status"] == "Pass").mean() * 100, 1
     )
+    _mob_share = dff.assign(_m=dff["device"].str.contains("Mobile", na=False)).groupby("imd_band")["_m"].mean()
+    top_mob_band = _mob_share.idxmax() if len(_mob_share) else "n/a"
+    top_mob_pct = round(_mob_share.max() * 100) if len(_mob_share) else 0
     st.markdown(f"""
     <div class="insight">
       💡 <strong>Equity Insight:</strong> Students in the highest deprivation band (0-10%) pass at
       <strong>{high_dep_pass}%</strong>, compared to <strong>{low_dep_pass}%</strong> for the
-      lowest deprivation band. Mobile (Low-Bandwidth) device usage is concentrated in this cohort,
-      suggesting structural access barriers beyond motivation.
+      lowest deprivation band. Mobile (Low-Bandwidth) use is highest in the {top_mob_band} band
+      ({top_mob_pct}% of students), suggesting structural access barriers beyond motivation.
     </div>
     """, unsafe_allow_html=True)
 
@@ -577,12 +617,15 @@ elif page == "02 · Engagement Analysis":
     tidy(fig4)
     st.plotly_chart(fig4, width="stretch")
 
+    _ar = dff["assignments_submitted"] <= 1
+    _wd = dff["status"] == "Withdrawn"
+    ar_wd = round(_wd[_ar].mean() * 100) if _ar.any() else 0
+    rest_wd = round(_wd[~_ar].mean() * 100) if (~_ar).any() else 0
     st.markdown(f"""
     <div class="insight insight-warn">
-      ⚠ <strong>At-Risk Signal:</strong> Students who submitted only 1 assignment or fewer
-      ({at_risk_n} students, {round(at_risk_n/len(dff)*100)}%) show withdrawal rates 3× higher
-      than the cohort average. Assignment submission in Week 1-2 is the strongest early predictor
-      of final outcome in this dataset.
+      ⚠ <strong>At-Risk Signal:</strong> {at_risk_n} students ({round(at_risk_n/len(dff)*100) if len(dff) else 0}%)
+      submitted one assignment or fewer. {ar_wd}% of them withdrew, compared with {rest_wd}% of
+      everyone else, making submission count the clearest at-risk signal in this dataset.
     </div>
     """, unsafe_allow_html=True)
 
@@ -660,12 +703,18 @@ elif page == "03 · Device & Access":
     tidy(fig4)
     st.plotly_chart(fig4, width="stretch")
 
+    _mob = dff["device"].str.contains("Mobile", na=False)
+    _big = dff["device"].isin(["Desktop", "Laptop"])
+    _hd = dff["imd_band"].str.contains("0-10%", na=False)
+    dev_gap = (dff.loc[_big, "final_score"].mean() - dff.loc[_mob, "final_score"].mean()) if (_mob.any() and _big.any()) else 0
+    mob_hd = round(_mob[_hd].mean() * 100) if _hd.any() else 0
+    mob_rest = round(_mob[~_hd].mean() * 100) if (~_hd).any() else 0
     st.markdown(f"""
     <div class="insight insight-warn">
-      ⚠ <strong>Access Equity Gap:</strong> Mobile (Low-Bandwidth) users score an average of
-      ~12 points lower than Desktop/Laptop users. This gap is concentrated in students from
-      Maluku and West Papua in the 0-10% deprivation band, confirming that device access
-      is a structural barrier, not a learner variable.
+      ⚠ <strong>Access Equity Gap:</strong> Mobile (Low-Bandwidth) users score {dev_gap:.1f} points
+      lower on average than Desktop/Laptop users. {mob_hd}% of students in the 0-10% deprivation band
+      learn on mobile, compared with {mob_rest}% of everyone else, so device access is a structural
+      barrier, not a learner variable.
     </div>
     """, unsafe_allow_html=True)
 
@@ -695,7 +744,7 @@ elif page == "04 · Interventions":
 
     sev = st.radio("Show:", ["All", "High Priority", "Medium Priority"], horizontal=True)
 
-    for finding, rec, frameworks, severity in INTERVENTIONS:
+    for finding, rec, frameworks, severity in build_interventions(df):
         if sev == "High Priority"   and severity != "high":   continue
         if sev == "Medium Priority" and severity != "medium": continue
 

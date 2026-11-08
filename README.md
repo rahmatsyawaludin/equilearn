@@ -27,7 +27,7 @@ It doesn't just visualise data. It reads the data, identifies the structural ine
 
 ## The Dataset
 
-50 students across Indonesia, tracked across:
+A **mock dataset** of 50 students across Indonesia (created for this portfolio piece), tracked across:
 
 | Variable | Description |
 |----------|-------------|
@@ -49,10 +49,10 @@ Data is served live from **Google Sheets** via the CSV export API, no database r
 Maps the full cohort by deprivation index and pass rate. The headline finding: students in the highest deprivation band (IMD 0-10%) pass at a significantly lower rate than the lowest deprivation band, and mobile device usage is concentrated in that same cohort.
 
 ### 02 · Engagement Analysis
-Disaggregates LMS clicks, session time, and assignment submission by outcome and deprivation band. Key signal: high-passing students average **42 total clicks**; withdrawn students average only **22**: a 2× engagement gap that appears within the first two weeks.
+Disaggregates LMS clicks, session time, and assignment submission by outcome and deprivation band. Key signal: submissions, not clicks. Of the 13 students who submitted one assignment or fewer, **69% withdrew**, versus **8%** of everyone else. Clicks barely separate outcomes (33.6 for passing vs 29.5 for withdrawn students).
 
 ### 03 · Device & Access Analysis
-Treats device type as a structural equity variable, not a learner preference. Desktop users outperform mobile users by an average of **12 score points**. Mobile (Low-Bandwidth) users are disproportionately from high-deprivation areas in Maluku and West Papua, confirming that the performance gap is a hardware access gap, not a learning ability gap.
+Treats device type as a structural equity variable, not a learner preference. Desktop and Laptop users outscore Mobile (Low-Bandwidth) users by an average of **5.8 points**, and **36%** of students in the highest-deprivation band learn on mobile, versus **13%** of everyone else. That points to a hardware access gap, not a learning ability gap.
 
 ### 04 · Instructional Interventions
 This is the "so what?" page. Every data finding maps directly to a designer's recommended response, tagged with the relevant instructional framework:
@@ -60,10 +60,11 @@ This is the "so what?" page. Every data finding maps directly to a designer's re
 | Data Finding | Designer's Recommendation | Frameworks |
 |---|---|---|
 | High-deprivation students use mobile significantly more, yet LMS content isn't optimised for low-bandwidth | Audit all materials for mobile responsiveness. Convert PDFs to lightweight HTML. Add a Low-Bandwidth Mode toggle. | Equity-First Design · Offline-First · UDL |
-| Withdrawn students average only 1 assignment submission vs. 3.5 for passing students | Automated flag: no Assignment 1 by Week 3 → trigger personal outreach via SMS/WhatsApp | ADDIE · SAM Iteration · Formative Design |
-| Maluku and West Papua students show lower scores and higher withdrawal rates | Design a region-aware onboarding module with culturally grounded context from Eastern Indonesia | Needs Analysis · Culturally Responsive Design · Backward Design |
-| 2× click gap between passing and withdrawn students appears in first two weeks | Week 2 threshold: fewer than 15 clicks → automated check-in prompt | Cognitive Load Theory · SAM · Formative Design |
-| Desktop users outscore mobile users by 12 points | Partner with regional institutions for device lending. Design Mobile-First content variants as the default, not an add-on. | UDL · Equity-First Design · Accessibility |
+| Withdrawn students average 1.2 assignment submissions vs. 4.0 for passing students | Automated flag: no Assignment 1 by Week 3 → trigger personal outreach via SMS/WhatsApp | ADDIE · SAM Iteration · Formative Design |
+| Maluku has the lowest average score (48.6); Jakarta the highest (60.0) | Design a region-aware onboarding module with culturally grounded context from Eastern Indonesia | Needs Analysis · Culturally Responsive Design · Backward Design |
+| Clicks alone are a weak signal (33.6 vs 29.5); submissions separate outcomes far better | Build early-warning rules on submissions and assessment activity, with clicks as a secondary signal | Learning Analytics · SAM · Formative Design |
+| Prior qualification is not a barrier: Secondary-level students score highest (58.0) | Don't stream learners by prior credentials; trigger support from in-course signals instead | Differentiated Instruction · Vygotsky ZPD · Backward Design |
+| Desktop/Laptop users outscore mobile users by 5.8 points | Partner with regional institutions for device lending. Design Mobile-First content variants as the default, not an add-on. | UDL · Equity-First Design · Accessibility |
 
 ### 05 · Technical
 The architecture page. Shows the full data pipeline, from Google Sheets master tab → Pandas ETL → equity segmentation → Streamlit visualisation, with live code samples and the complete tech stack.
