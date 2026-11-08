@@ -1,11 +1,11 @@
 """
-EquiLearn Analytics — Streamlit Dashboard
+EquiLearn Analytics: Streamlit Dashboard
 ==========================================
 Author : Rahmat Syawaludin
          MEd Digital Learning · Monash University · LPDP Scholar
-Contact: rahmatsywldn@gmail.com
+Contact: contact.rahmats@gmail.com
 Run    : streamlit run app.py
-Deploy : streamlit.io — connect GitHub repo, set main file to app.py
+Deploy : streamlit.io: connect GitHub repo, set main file to app.py
 """
 
 from io import StringIO
@@ -20,16 +20,24 @@ st.set_page_config(
     page_title="EquiLearn Analytics · Rahmat Syawaludin",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="auto",
 )
 
-# ── Design tokens (matching rahmatsyawaludin.github.io/portfolio) ─────────────
-AMBER   = "#c8954a"
-NAVY    = "#2d6a9f"
-RED     = "#c0392b"
-GREEN   = "#27ae60"
-TEXT    = "#1a1f2e"
-MUTED   = "#5c6475"
+# ── Design tokens (matching rahmats.web.id) ─────────────────────────────────
+INDIGO  = "#2F3185"
+ACCENT  = INDIGO          # eyebrows, links
+TEAL    = "#1CBDB3"
+TEAL_DK = "#0f8a83"       # readable teal for text
+AMBER   = "#FFB800"
+AMBER_DK= "#9a6f00"       # readable amber for text
+NAVY    = INDIGO          # kept for chart code below
+RED     = "#d64560"
+GREEN   = TEAL
+TEXT    = "#1a1b3a"
+MUTED   = "#6b6d8e"
+FAINT   = "#9b9dbf"
+HAIRLINE= "#e2e4f0"
+OFFWHITE= "#F7F8FF"
 
 # IMD bands in deprivation order (high → low)
 IMD_ORDER = [
@@ -43,81 +51,104 @@ IMD_ORDER = [
 # ── Global CSS ────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-html, body, [class*="css"] {
-  font-family: 'DM Sans', sans-serif;
-  background-color: #f5f2ed;
-  color: #1a1f2e;
+html, body, [class*="css"], .stApp, .stMarkdown, p, li, label, input, button {
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
-#MainMenu, footer, header { visibility: hidden; }
+.stApp { background-color: #F7F8FF; color: #1a1b3a; }
+#MainMenu, footer { visibility: hidden; }
+header[data-testid="stHeader"] { background: transparent; }
 .block-container { padding-top: 2rem; padding-bottom: 4rem; max-width: 1200px; }
 
 /* Metric cards */
-div[data-testid="metric-container"] {
+div[data-testid="stMetric"], div[data-testid="metric-container"] {
   background: #ffffff;
-  border: 1px solid #e8e3db;
-  border-radius: 12px;
+  border: 1px solid #e2e4f0;
+  border-radius: 16px;
   padding: 1.25rem 1.5rem;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px rgba(47,49,133,0.08);
 }
-div[data-testid="metric-container"] label {
+div[data-testid="stMetricLabel"] { min-height: 0; }
+div[data-testid="stMetric"] label, div[data-testid="metric-container"] label,
+div[data-testid="stMetricLabel"], div[data-testid="stMetricLabel"] * {
   font-size: 0.72rem !important;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #5c6475 !important;
-  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #6b6d8e !important;
+  font-weight: 700 !important;
 }
-div[data-testid="metric-container"] div[data-testid="stMetricValue"] {
-  font-family: 'Syne', sans-serif;
+div[data-testid="stMetricValue"], div[data-testid="stMetricValue"] div {
+  font-family: 'Sora', sans-serif !important;
   font-size: 2rem !important;
-  font-weight: 800;
-  color: #1a1f2e;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em;
+  color: #2F3185 !important;
 }
 
-h1, h2, h3 { font-family: 'Syne', sans-serif !important; font-weight: 800 !important; color: #1a1f2e !important; }
+h1, h2, h3, h4 { font-family: 'Sora', sans-serif !important; font-weight: 800 !important; letter-spacing: -0.02em; color: #1a1b3a !important; }
 
-[data-testid="stSidebar"] { background: #ffffff; border-right: 1px solid #e8e3db; }
+[data-testid="stSidebar"] { background: #ffffff; border-right: 1px solid #e2e4f0; }
+[data-testid="stSidebar"] [role="radiogroup"] label { border-radius: 999px; padding: 0.35rem 0.75rem; }
+[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) { background: #2F3185; }
+[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) p { color: #ffffff !important; font-weight: 700; }
+[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) > div:first-child { display: none; }
+
+.stPlotlyChart, [data-testid="stPlotlyChart"] {
+  background: #ffffff;
+  border: 1px solid #e2e4f0;
+  border-radius: 16px;
+  padding: 0.5rem;
+}
 
 .tag {
   display: inline-block;
-  background: #f0ece5;
-  border: 1px solid #ddd8cf;
-  color: #5c6475;
-  font-size: 0.72rem;
-  font-weight: 600;
-  padding: 0.2rem 0.65rem;
+  background: rgba(255,184,0,0.15);
+  color: #9a6f00;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.2rem 0.7rem;
   border-radius: 999px;
   margin: 0.15rem;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
 }
 .insight {
-  background: #eef4fb;
-  border-left: 3px solid #2d6a9f;
-  border-radius: 8px;
+  background: rgba(47,49,133,0.06);
+  border-left: 4px solid #2F3185;
+  border-radius: 12px;
   padding: 1rem 1.25rem;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   line-height: 1.7;
-  color: #1a1f2e;
+  color: #1a1b3a;
   margin: 0.75rem 0;
 }
-.insight-warn  { background: #fdf0ef; border-left-color: #c0392b; }
-.insight-ok    { background: #edfaf3; border-left-color: #27ae60; }
+.insight-warn  { background: rgba(214,69,96,0.07); border-left-color: #d64560; }
+.insight-ok    { background: rgba(28,189,179,0.10); border-left-color: #1CBDB3; }
 
 .int-card {
   background: #ffffff;
-  border: 1px solid #e8e3db;
-  border-radius: 12px;
+  border: 1px solid #e2e4f0;
+  border-radius: 16px;
   padding: 1.5rem;
   margin-bottom: 1rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 8px rgba(47,49,133,0.06);
 }
-hr { border-color: #e8e3db; margin: 2rem 0; }
+@media (max-width: 640px) {
+  .int-grid { grid-template-columns: 1fr !important; }
+}
+hr { border-color: #e2e4f0; margin: 2rem 0; }
+
+.stButton button, .stLinkButton a {
+  border-radius: 999px !important;
+  font-weight: 700 !important;
+}
+.stLinkButton a { border-color: #e2e4f0 !important; color: #2F3185 !important; }
+.stLinkButton a:hover { border-color: #2F3185 !important; }
 
 button[data-baseweb="tab"][aria-selected="true"] {
-  color: #c8954a !important;
-  border-bottom-color: #c8954a !important;
+  color: #2F3185 !important;
 }
+div[data-baseweb="tab-highlight"] { background-color: #2F3185 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -206,7 +237,7 @@ def load_data():
         })
         if len(df) < 2:
             raise ValueError("Empty sheet")
-        source = "🟢 Live — Google Sheets"
+        source = "🟢 Live: Google Sheets"
     except Exception:
         df = pd.read_csv(StringIO(MASTER_CSV))
         source = "🟡 Sample data (fallback)"
@@ -224,7 +255,9 @@ def load_data():
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 PLOT_BASE = dict(
-    font_family="DM Sans",
+    font_color=TEXT,
+    colorway=[INDIGO, TEAL, AMBER, RED, FAINT],
+    font_family="Plus Jakarta Sans",
     paper_bgcolor="rgba(0,0,0,0)",
     plot_bgcolor="rgba(0,0,0,0)",
     margin=dict(l=16, r=16, t=40, b=16),
@@ -233,20 +266,20 @@ PLOT_BASE = dict(
 def tidy(fig):
     fig.update_layout(
         **PLOT_BASE,
-        xaxis=dict(gridcolor="#ede9e2", linecolor="#e8e3db"),
-        yaxis=dict(gridcolor="#ede9e2", linecolor="#e8e3db"),
+        xaxis=dict(gridcolor="#eceef8", linecolor=HAIRLINE),
+        yaxis=dict(gridcolor="#eceef8", linecolor=HAIRLINE),
     )
     return fig
 
 INTERVENTIONS = [
     (
-        "Students from high-deprivation areas (IMD 0–10%) use Mobile (Low-Bandwidth) devices significantly more — yet LMS content is not optimised for low-bandwidth environments.",
+        "Students from high-deprivation areas (IMD 0-10%) use Mobile (Low-Bandwidth) devices significantly more, yet LMS content is not optimised for low-bandwidth environments.",
         "Audit all course materials for mobile responsiveness. Convert PDFs to lightweight HTML pages. Compress video assets. Add a 'Low-Bandwidth Mode' toggle in LMS settings.",
         ["Equity-First Design", "Offline-First", "UDL"], "high"
     ),
     (
-        "Withdrawn students average only 1 assignment submission — compared to 3.5 for passing students. Early assignment non-submission is the clearest at-risk signal in this dataset.",
-        "Implement an automated flag: if a student has not submitted Assignment 1 by Week 3, trigger a personal outreach — SMS, WhatsApp, or tutor call depending on device type.",
+        "Withdrawn students average only 1 assignment submission, compared to 3.5 for passing students. Early assignment non-submission is the clearest at-risk signal in this dataset.",
+        "Implement an automated flag: if a student has not submitted Assignment 1 by Week 3, trigger personal outreach by SMS, WhatsApp or a tutor call, depending on device type.",
         ["ADDIE", "SAM Iteration", "Formative Design"], "high"
     ),
     (
@@ -255,18 +288,18 @@ INTERVENTIONS = [
         ["Needs Analysis", "Culturally Responsive Design", "Backward Design"], "high"
     ),
     (
-        "Secondary-education students submit fewer assignments and have lower average scores — yet enrol at similar rates to Bachelor/Master-level peers.",
+        "Secondary-education students submit fewer assignments and have lower average scores, yet enrol at similar rates to Bachelor/Master-level peers.",
         "Build a differentiated pre-module literacy scaffold for students with secondary-level prior education. Use inquiry-based activities before formal assessment to build confidence.",
         ["Differentiated Instruction", "Vygotsky ZPD", "Backward Design"], "medium"
     ),
     (
-        "High-passing students average 42 total clicks; withdrawn students average only 22 — a 2× engagement gap that appears within the first two weeks.",
+        "High-passing students average 42 total clicks; withdrawn students average only 22: a 2× engagement gap that appears within the first two weeks.",
         "Set a Week 2 engagement threshold: fewer than 15 clicks by end of Week 2 triggers an automated check-in prompt. Early detection prevents late-stage withdrawal.",
         ["Cognitive Load Theory", "SAM", "Formative Design"], "medium"
     ),
     (
-        "Desktop users outperform mobile users by an average of 12 score points — indicating that device access is a structural equity variable, not a learner variable.",
-        "Partner with regional institutions to provide device lending programmes. Design 'Mobile-First' content variants for all core modules — not as extras, but as the default.",
+        "Desktop users outperform mobile users by an average of 12 score points, indicating that device access is a structural equity variable, not a learner variable.",
+        "Partner with regional institutions to provide device lending programmes. Design 'Mobile-First' content variants for all core modules, as the default rather than an extra.",
         ["Universal Design for Learning", "Equity-First Design", "Accessibility"], "medium"
     ),
 ]
@@ -280,8 +313,8 @@ with st.spinner("Fetching data…"):
 with st.sidebar:
     st.markdown(f"""
     <div style="margin-bottom:1.5rem">
-      <div style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:{TEXT}">
-        Equi<span style="color:{AMBER}">Learn</span>
+      <div style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:800;color:{TEXT}">
+        Equi<span style="color:{TEAL}">Learn</span>
       </div>
       <div style="font-size:0.72rem;color:{MUTED};margin-top:0.2rem;
                   text-transform:uppercase;letter-spacing:0.06em">
@@ -318,8 +351,8 @@ with st.sidebar:
       MEd Digital Learning<br>
       Monash University · LPDP Scholar<br><br>
       <span style="font-size:0.7rem">{source}</span><br><br>
-      <a href="https://rahmatsyawaludin.github.io/portfolio"
-         target="_blank" style="color:{AMBER};text-decoration:none">
+      <a href="https://rahmats.web.id"
+         target="_blank" style="color:{ACCENT};font-weight:700;text-decoration:none">
         ← Back to Portfolio
       </a>
     </div>
@@ -335,14 +368,14 @@ if sel_outcome != "All": dff = dff[dff["status"]  == sel_outcome]
 st.markdown(f"""
 <div style="margin-bottom:2rem">
   <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em;
-              color:{AMBER};font-weight:700;margin-bottom:0.5rem">
+              color:{ACCENT};font-weight:700;margin-bottom:0.5rem">
     Learning Analytics · Indonesia · Instructional Design
   </div>
   <h1 style="font-size:2.5rem;line-height:1.1;margin:0 0 0.75rem">
     EquiLearn: Learning Analytics<br>
-    <em style="color:{AMBER};font-style:italic;font-weight:400">&amp; Strategy Dashboard</em>
+    <em style="color:{TEAL_DK};font-style:normal">&amp; Strategy Dashboard</em>
   </h1>
-  <p style="color:{MUTED};font-size:1rem;font-weight:300;max-width:600px;margin:0 0 0.75rem">
+  <p style="color:{MUTED};font-size:1rem;max-width:600px;margin:0 0 0.75rem">
     Transforming raw student clickstreams into instructional interventions to close equity gaps.
   </p>
   <div>
@@ -359,15 +392,15 @@ st.divider()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# PAGE 01 — EQUITY OVERVIEW
+# PAGE 01: EQUITY OVERVIEW
 # ══════════════════════════════════════════════════════════════════════════════
 if page == "01 · Equity Overview":
     st.markdown(f"""
     <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;
-                color:{AMBER};font-weight:700;margin-bottom:0.4rem">01 — Equity Overview</div>
-    <h2 style="margin:0 0 0.4rem">Who is <em style="color:{AMBER};font-style:italic">learning</em>?</h2>
-    <p style="color:{MUTED};font-weight:300;max-width:580px;margin:0 0 1.75rem">
-      Mapping 50 students across Indonesia by deprivation index, region, and device —
+                color:{ACCENT};font-weight:700;margin-bottom:0.4rem">01 · Equity Overview</div>
+    <h2 style="margin:0 0 0.4rem">Who is <em style="color:{TEAL_DK};font-style:normal">learning</em>?</h2>
+    <p style="color:{MUTED};max-width:580px;margin:0 0 1.75rem">
+      Mapping 50 students across Indonesia by deprivation index, region, and device,
       because equity begins with knowing who's in the room.
     </p>
     """, unsafe_allow_html=True)
@@ -383,7 +416,7 @@ if page == "01 · Equity Overview":
     c1.metric("Total Students",         f"{total}")
     c2.metric("Pass Rate",              f"{pass_rate}%")
     c3.metric("Withdrawn",              f"{withdrawn}")
-    c4.metric("High Deprivation (0–10%)", f"{high_dep}")
+    c4.metric("High Deprivation", f"{high_dep}")
 
     st.markdown("<br>", unsafe_allow_html=True)
     col_a, col_b = st.columns([3, 2])
@@ -404,7 +437,7 @@ if page == "01 · Equity Overview":
                      title="Student Count by Deprivation Band")
         fig.update_traces(marker_line_width=0, marker_cornerradius=6)
         tidy(fig).update_layout(showlegend=False)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     with col_b:
         pr = (
@@ -414,15 +447,17 @@ if page == "01 · Equity Overview":
             .reset_index()
         )
         pr.columns = ["IMD Band", "Pass Rate %"]
+        pr["colour"] = pr["Pass Rate %"].apply(
+            lambda v: RED if v < 40 else (AMBER if v < 60 else TEAL)
+        )
         fig2 = px.bar(pr, y="IMD Band", x="Pass Rate %",
                       orientation="h",
                       title="Pass Rate by Deprivation Band",
-                      color="Pass Rate %",
-                      color_continuous_scale=[[0, RED],[0.5, AMBER],[1, GREEN]],
-                      range_color=[0, 100])
-        fig2.update_traces(marker_cornerradius=4)
-        tidy(fig2).update_layout(coloraxis_showscale=False)
-        st.plotly_chart(fig2, use_container_width=True)
+                      color="colour", color_discrete_map="identity",
+                      range_x=[0, 100])
+        fig2.update_traces(marker_cornerradius=4, marker_line_width=0)
+        tidy(fig2).update_layout(showlegend=False)
+        st.plotly_chart(fig2, width="stretch")
 
     # Region chart
     reg = (
@@ -436,7 +471,7 @@ if page == "01 · Equity Overview":
                   color_discrete_sequence=[NAVY])
     fig3.update_traces(marker_cornerradius=5)
     tidy(fig3)
-    st.plotly_chart(fig3, use_container_width=True)
+    st.plotly_chart(fig3, width="stretch")
 
     # Equity insight
     high_dep_pass = round(
@@ -447,8 +482,8 @@ if page == "01 · Equity Overview":
     )
     st.markdown(f"""
     <div class="insight">
-      💡 <strong>Equity Insight:</strong> Students in the highest deprivation band (0–10%) pass at
-      <strong>{high_dep_pass}%</strong> — compared to <strong>{low_dep_pass}%</strong> for the
+      💡 <strong>Equity Insight:</strong> Students in the highest deprivation band (0-10%) pass at
+      <strong>{high_dep_pass}%</strong>, compared to <strong>{low_dep_pass}%</strong> for the
       lowest deprivation band. Mobile (Low-Bandwidth) device usage is concentrated in this cohort,
       suggesting structural access barriers beyond motivation.
     </div>
@@ -456,15 +491,15 @@ if page == "01 · Equity Overview":
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# PAGE 02 — ENGAGEMENT ANALYSIS
+# PAGE 02: ENGAGEMENT ANALYSIS
 # ══════════════════════════════════════════════════════════════════════════════
 elif page == "02 · Engagement Analysis":
     st.markdown(f"""
     <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;
-                color:{AMBER};font-weight:700;margin-bottom:0.4rem">02 — Engagement Analysis</div>
-    <h2 style="margin:0 0 0.4rem">How are learners <em style="color:{AMBER};font-style:italic">behaving</em>?</h2>
-    <p style="color:{MUTED};font-weight:300;max-width:580px;margin:0 0 1.75rem">
-      Clicks, session time, and assignment submission — disaggregated by outcome and deprivation.
+                color:{ACCENT};font-weight:700;margin-bottom:0.4rem">02 · Engagement Analysis</div>
+    <h2 style="margin:0 0 0.4rem">How are learners <em style="color:{TEAL_DK};font-style:normal">behaving</em>?</h2>
+    <p style="color:{MUTED};max-width:580px;margin:0 0 1.75rem">
+      Clicks, session time, and assignment submission, disaggregated by outcome and deprivation.
     </p>
     """, unsafe_allow_html=True)
 
@@ -484,7 +519,7 @@ elif page == "02 · Engagement Analysis":
     col_a, col_b = st.columns(2)
 
     with col_a:
-        # Clicks by outcome — box plot
+        # Clicks by outcome: box plot
         fig = px.box(
             dff, x="status", y="total_clicks",
             color="status",
@@ -493,7 +528,7 @@ elif page == "02 · Engagement Analysis":
             labels={"status": "", "total_clicks": "Total Clicks"},
         )
         tidy(fig).update_layout(showlegend=False)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     with col_b:
         # Assignments submitted by outcome
@@ -509,7 +544,7 @@ elif page == "02 · Engagement Analysis":
                       labels={"Status": "", "Avg Submissions": "Avg Submissions"})
         fig2.update_traces(marker_cornerradius=6, marker_line_width=0)
         tidy(fig2).update_layout(showlegend=False)
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, width="stretch")
 
     # Scatter: clicks vs score
     fig3 = px.scatter(
@@ -523,7 +558,7 @@ elif page == "02 · Engagement Analysis":
         trendline="ols",
     )
     tidy(fig3).update_layout(height=420)
-    st.plotly_chart(fig3, use_container_width=True)
+    st.plotly_chart(fig3, width="stretch")
 
     # Engagement by IMD band
     eng_imd = (
@@ -540,28 +575,28 @@ elif page == "02 · Engagement Analysis":
     )
     fig4.update_traces(marker_cornerradius=5)
     tidy(fig4)
-    st.plotly_chart(fig4, use_container_width=True)
+    st.plotly_chart(fig4, width="stretch")
 
     st.markdown(f"""
     <div class="insight insight-warn">
       ⚠ <strong>At-Risk Signal:</strong> Students who submitted only 1 assignment or fewer
       ({at_risk_n} students, {round(at_risk_n/len(dff)*100)}%) show withdrawal rates 3× higher
-      than the cohort average. Assignment submission in Week 1–2 is the strongest early predictor
+      than the cohort average. Assignment submission in Week 1-2 is the strongest early predictor
       of final outcome in this dataset.
     </div>
     """, unsafe_allow_html=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# PAGE 03 — DEVICE & ACCESS
+# PAGE 03: DEVICE & ACCESS
 # ══════════════════════════════════════════════════════════════════════════════
 elif page == "03 · Device & Access":
     st.markdown(f"""
     <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;
-                color:{AMBER};font-weight:700;margin-bottom:0.4rem">03 — Device &amp; Access Analysis</div>
-    <h2 style="margin:0 0 0.4rem">Does <em style="color:{AMBER};font-style:italic">access</em> predict outcome?</h2>
-    <p style="color:{MUTED};font-weight:300;max-width:580px;margin:0 0 1.75rem">
-      Device type is a structural equity variable — not a learner preference. 
+                color:{ACCENT};font-weight:700;margin-bottom:0.4rem">03 · Device &amp; Access Analysis</div>
+    <h2 style="margin:0 0 0.4rem">Does <em style="color:{TEAL_DK};font-style:normal">access</em> predict outcome?</h2>
+    <p style="color:{MUTED};max-width:580px;margin:0 0 1.75rem">
+      Device type is a structural equity variable, not a learner preference. 
       Mobile (Low-Bandwidth) users are disproportionately from high-deprivation areas.
     </p>
     """, unsafe_allow_html=True)
@@ -576,7 +611,7 @@ elif page == "03 · Device & Access":
                      color_discrete_sequence=[NAVY, AMBER, GREEN, RED, MUTED],
                      hole=0.5)
         fig.update_layout(**PLOT_BASE)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     with col_b:
         dev_score = (
@@ -593,7 +628,7 @@ elif page == "03 · Device & Access":
                       labels={"Device": "", "Avg Score": "Avg Final Score"})
         fig2.update_traces(marker_cornerradius=5, marker_line_width=0)
         tidy(fig2).update_layout(showlegend=False)
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, width="stretch")
 
     # Mobile vs non-mobile by IMD
     dff["mobile"] = dff["device"].str.contains("Mobile", na=False)
@@ -610,7 +645,7 @@ elif page == "03 · Device & Access":
                   labels={"IMD Band": "", "% Mobile Users": "% Mobile Users"})
     fig3.update_traces(marker_cornerradius=5)
     tidy(fig3)
-    st.plotly_chart(fig3, use_container_width=True)
+    st.plotly_chart(fig3, width="stretch")
 
     # Prior education vs score
     edu_score = (
@@ -623,13 +658,13 @@ elif page == "03 · Device & Access":
                   color_discrete_sequence=[NAVY])
     fig4.update_traces(marker_cornerradius=5)
     tidy(fig4)
-    st.plotly_chart(fig4, use_container_width=True)
+    st.plotly_chart(fig4, width="stretch")
 
     st.markdown(f"""
     <div class="insight insight-warn">
       ⚠ <strong>Access Equity Gap:</strong> Mobile (Low-Bandwidth) users score an average of
       ~12 points lower than Desktop/Laptop users. This gap is concentrated in students from
-      Maluku and West Papua in the 0–10% deprivation band — confirming that device access
+      Maluku and West Papua in the 0-10% deprivation band, confirming that device access
       is a structural barrier, not a learner variable.
     </div>
     """, unsafe_allow_html=True)
@@ -637,7 +672,7 @@ elif page == "03 · Device & Access":
     st.markdown(f"""
     <div class="insight insight-ok">
       ✅ <strong>Design Response:</strong> All course materials should be designed
-      Mobile-First by default — not as an accessibility add-on. Offline-capable content,
+      Mobile-First by default, not as an accessibility add-on. Offline-capable content,
       compressed assets, and low-bandwidth session design are non-negotiable for equitable
       learning in the Indonesian context.
     </div>
@@ -645,15 +680,15 @@ elif page == "03 · Device & Access":
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# PAGE 04 — INTERVENTIONS
+# PAGE 04: INTERVENTIONS
 # ══════════════════════════════════════════════════════════════════════════════
 elif page == "04 · Interventions":
     st.markdown(f"""
     <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;
-                color:{AMBER};font-weight:700;margin-bottom:0.4rem">04 — Instructional Interventions</div>
-    <h2 style="margin:0 0 0.4rem">The <em style="color:{AMBER};font-style:italic">so what</em>?</h2>
-    <p style="color:{MUTED};font-weight:300;max-width:580px;margin:0 0 1.75rem">
-      Data without action is noise. Every finding below maps to a designer's response —
+                color:{ACCENT};font-weight:700;margin-bottom:0.4rem">04 · Instructional Interventions</div>
+    <h2 style="margin:0 0 0.4rem">The <em style="color:{TEAL_DK};font-style:normal">so what</em>?</h2>
+    <p style="color:{MUTED};max-width:580px;margin:0 0 1.75rem">
+      Data without action is noise. Every finding below maps to a designer's response,
       grounded in instructional theory and equity principles.
     </p>
     """, unsafe_allow_html=True)
@@ -664,7 +699,7 @@ elif page == "04 · Interventions":
         if sev == "High Priority"   and severity != "high":   continue
         if sev == "Medium Priority" and severity != "medium": continue
 
-        colour = RED if severity == "high" else AMBER
+        colour = RED if severity == "high" else AMBER_DK
         label  = "🔴 High Priority" if severity == "high" else "🟡 Medium Priority"
         tags   = "".join(f'<span class="tag">{f}</span>' for f in frameworks)
 
@@ -676,7 +711,7 @@ elif page == "04 · Interventions":
                          text-transform:uppercase;color:{colour}">{label}</span>
             <div>{tags}</div>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+          <div class="int-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
             <div>
               <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;
                           font-weight:700;color:{RED};margin-bottom:0.4rem">⚠ Data Finding</div>
@@ -684,7 +719,7 @@ elif page == "04 · Interventions":
             </div>
             <div>
               <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;
-                          font-weight:700;color:{GREEN};margin-bottom:0.4rem">→ Designer's Recommendation</div>
+                          font-weight:700;color:{TEAL_DK};margin-bottom:0.4rem">→ Designer's Recommendation</div>
               <p style="font-size:0.9rem;line-height:1.65;color:{TEXT};margin:0">{rec}</p>
             </div>
           </div>
@@ -693,14 +728,14 @@ elif page == "04 · Interventions":
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# PAGE 05 — TECHNICAL
+# PAGE 05: TECHNICAL
 # ══════════════════════════════════════════════════════════════════════════════
 elif page == "05 · Technical":
     st.markdown(f"""
     <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;
-                color:{AMBER};font-weight:700;margin-bottom:0.4rem">05 — Under the Hood</div>
-    <h2 style="margin:0 0 0.4rem">The <em style="color:{AMBER};font-style:italic">architecture</em>.</h2>
-    <p style="color:{MUTED};font-weight:300;max-width:580px;margin:0 0 1.75rem">
+                color:{ACCENT};font-weight:700;margin-bottom:0.4rem">05 · Under the Hood</div>
+    <h2 style="margin:0 0 0.4rem">The <em style="color:{TEAL_DK};font-style:normal">architecture</em>.</h2>
+    <p style="color:{MUTED};max-width:580px;margin:0 0 1.75rem">
       One master DataFrame. A pipeline built for equity-first analysis.
     </p>
     """, unsafe_allow_html=True)
@@ -750,13 +785,13 @@ print(f"Pass rate: {(df['status']=='Pass').mean():.1%}")
         stack = {
             "🐍 Python + Pandas": "ETL, merge logic, equity segmentation",
             "📊 Plotly":           "Interactive charts, scatter, radar",
-            "🚀 Streamlit":        "App framework — runs locally + Streamlit Cloud",
+            "🚀 Streamlit":        "App framework, runs locally and on Streamlit Cloud",
             "📋 Google Sheets":    "Live data via GViz CSV endpoint",
-            "🌐 GitHub Pages":     "Version control + free hosting",
+            "🐙 GitHub":           "Version control; app hosted on Streamlit Community Cloud",
         }
         for name, desc in stack.items():
             st.markdown(f"""
-            <div style="background:#fff;border:1px solid #e8e3db;border-radius:10px;
+            <div style="background:#fff;border:1px solid #e2e4f0;border-radius:12px;
                         padding:0.85rem 1rem;margin-bottom:0.6rem">
               <strong style="font-size:0.875rem">{name}</strong><br>
               <span style="font-size:0.78rem;color:{MUTED}">{desc}</span>
@@ -765,19 +800,19 @@ print(f"Pass rate: {(df['status']=='Pass').mean():.1%}")
 
         st.markdown("<br>", unsafe_allow_html=True)
         st.link_button("View on GitHub →",
-                       "https://github.com/rahmatsyawaludin",
-                       use_container_width=True)
+                       "https://github.com/rahmatsyawaludin/equilearn",
+                       width="stretch")
         st.link_button("← Back to Portfolio",
-                       "https://rahmatsyawaludin.github.io/portfolio",
-                       use_container_width=True)
+                       "https://rahmats.web.id",
+                       width="stretch")
 
     st.divider()
     st.markdown("**Live data preview**")
     tab1, tab2, tab3 = st.tabs(["Master Data", "Summary Stats", "Raw Shape"])
     with tab1:
-        st.dataframe(df.head(15), use_container_width=True)
+        st.dataframe(df.head(15), width="stretch")
     with tab2:
-        st.dataframe(df.describe().round(2), use_container_width=True)
+        st.dataframe(df.describe().round(2), width="stretch")
     with tab3:
         st.write(f"Rows: **{len(df)}** · Columns: **{len(df.columns)}**")
         st.write(df.dtypes.astype(str).rename("dtype").to_frame())
@@ -789,23 +824,23 @@ st.markdown(f"""
 <div style="display:flex;justify-content:space-between;align-items:flex-end;
             flex-wrap:wrap;gap:1rem;padding:0.5rem 0 1rem">
   <div>
-    <strong style="font-family:'Syne',sans-serif;font-size:0.95rem">Rahmat Syawaludin</strong><br>
+    <strong style="font-family:'Sora',sans-serif;font-size:0.95rem">Rahmat Syawaludin</strong><br>
     <span style="font-size:0.8rem;color:{MUTED}">
-      Instructional Designer · Learning Experience Designer · Jakarta, Indonesia<br>
+      Learning &amp; Development Specialist · Instructional Designer · Trainer · Jakarta, Indonesia<br>
       MEd Digital Learning · Monash University · LPDP Scholar
     </span>
   </div>
   <div style="font-size:0.8rem;display:flex;gap:1.5rem;flex-wrap:wrap">
-    <a href="https://rahmatsyawaludin.github.io/portfolio" target="_blank"
-       style="color:{AMBER};text-decoration:none">Portfolio</a>
+    <a href="https://rahmats.web.id" target="_blank"
+       style="color:{ACCENT};font-weight:700;text-decoration:none">Portfolio</a>
     <a href="https://linkedin.com/in/rahmat-syawaludin" target="_blank"
-       style="color:{AMBER};text-decoration:none">LinkedIn</a>
-    <a href="mailto:rahmatsywldn@gmail.com"
-       style="color:{AMBER};text-decoration:none">Email</a>
+       style="color:{ACCENT};font-weight:700;text-decoration:none">LinkedIn</a>
+    <a href="mailto:contact.rahmats@gmail.com"
+       style="color:{ACCENT};font-weight:700;text-decoration:none">Email</a>
   </div>
 </div>
 <p style="font-size:0.75rem;color:{MUTED};margin:0">
-  <em>"Learning design is not about content delivery —
-  it is about engineering the conditions in which people grow."</em>
+  <em>"Learning design is not about content delivery.
+  It is about engineering the conditions in which people grow."</em>
 </p>
 """, unsafe_allow_html=True)
